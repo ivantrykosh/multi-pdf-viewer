@@ -479,26 +479,28 @@ fun Modifier.tapToZoomVertical(
             detectTapGestures(
                 onDoubleTap = { tapCenter ->
                     if (!state.isZoomEnable) return@detectTapGestures
-                    if (state.mScale > 1.0f) {
+                    if (state.scale > 1.0f) {
                         state.mScale = 1.0f
                         state.offset = Offset(0f, 0f)
                     } else {
                         state.mScale = 3.0f
-                        val centerX = boxWidth / 2f
-                        val centerY = boxHeight / 2f
-                        val xDiff = (tapCenter.x - centerX) * state.scale
-                        val yDiff = ((tapCenter.y - centerY) * state.scale).coerceIn(
-                            minimumValue = -(centerY * 2f),
-                            maximumValue = (centerY * 2f)
+                        val maxOffsetX = (boxWidth * 3.0f - boxWidth) / 2f
+                        val maxOffsetY = (boxHeight * 3.0f - boxHeight) / 2f
+
+                        val targetX = (boxWidth / 2f - tapCenter.x) * 2.0f
+                        val targetY = (boxHeight / 2f - tapCenter.y) * 2.0f
+
+                        state.offset = Offset(
+                            x = targetX.coerceIn(-maxOffsetX, maxOffsetX),
+                            y = targetY.coerceIn(-maxOffsetY, maxOffsetY)
                         )
-                        state.offset = Offset(-xDiff, -yDiff)
                     }
                 }
             )
         }
         .pointerInput(isDrawingMode, boxWidth, boxHeight) {
             if (isDrawingMode) return@pointerInput
-            detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, rotation ->
+            detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, _ ->
                 if (!state.isZoomEnable) return@detectTransformGestures
 
                 val oldScale = state.scale
@@ -506,47 +508,35 @@ fun Modifier.tapToZoomVertical(
 
                 val isPinching = zoom != 1.0f
 
-                val pair = if (pan.y > 0) {
-                    if (state.lazyState.canScrollBackward && !isPinching) {
-                        Pair(0f, pan.y)
-                    } else {
-                        Pair(pan.y, 0f)
-                    }
+                val verticalPan = if (pan.y > 0) {
+                    if (state.lazyState.canScrollBackward && !isPinching) 0f else pan.y
                 } else {
-                    if (state.lazyState.canScrollForward && !isPinching) {
-                        Pair(0f, pan.y)
-                    } else {
-                        Pair(pan.y, 0f)
-                    }
+                    if (state.lazyState.canScrollForward && !isPinching) 0f else pan.y
                 }
+
+                val listScroll = pan.y - verticalPan
 
                 val centerX = boxWidth / 2f
                 val centerY = boxHeight / 2f
 
-                val zoomXOffset = (centroid.x - centerX) * (1f - zoom)
-                val zoomYOffset = (centroid.y - centerY) * (1f - zoom)
+                val zoomXOffset = (centroid.x - centerX) * (1f - newScale / oldScale)
+                val zoomYOffset = (centroid.y - centerY) * (1f - newScale / oldScale)
 
-                val targetX = (state.offset.x * zoom) + pan.x + zoomXOffset
-                val targetY = (state.offset.y * zoom) + pair.first + zoomYOffset
+                val targetX = (state.offset.x * (newScale / oldScale)) + pan.x + zoomXOffset
+                val targetY = (state.offset.y * (newScale / oldScale)) + verticalPan + zoomYOffset
 
-                val maxT = (boxWidth * newScale) - boxWidth
-                val maxY = (boxHeight * newScale) - boxHeight
-
-                val nOffset = if (newScale > 1f) {
-                    Offset(
-                        x = targetX.coerceIn((-maxT / 2) * 1.3f, (maxT / 2) * 1.3f),
-                        y = targetY.coerceIn(-maxY / 2, maxY / 2)
-                    )
-                } else {
-                    Offset(0f, 0f)
-                }
+                val maxOffsetX = maxOf(0f, (boxWidth * newScale - boxWidth) / 2f)
+                val maxOffsetY = maxOf(0f, (boxHeight * newScale - boxHeight) / 2f)
 
                 state.mScale = newScale
-                state.offset = nOffset
+                state.offset = Offset(
+                    x = targetX.coerceIn(-maxOffsetX, maxOffsetX),
+                    y = targetY.coerceIn(-maxOffsetY, maxOffsetY)
+                )
 
-                if (!isPinching && pair.second != 0f) {
+                if (!isPinching && listScroll != 0f) {
                     coroutineScope.launch {
-                        state.lazyState.scrollBy((-pair.second / state.scale))
+                        state.lazyState.scrollBy(-listScroll / state.scale)
                     }
                 }
             }
