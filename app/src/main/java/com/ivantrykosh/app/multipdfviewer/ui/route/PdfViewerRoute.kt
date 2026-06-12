@@ -4,14 +4,17 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -26,8 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,12 +36,14 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ivantrykosh.app.multipdfviewer.R
 import com.ivantrykosh.app.multipdfviewer.dimens.PdfViewerDimens
+import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingComponentsOptionsContainer
+import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalColorPicker
+import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalWidthPicker
+import com.ivantrykosh.app.multipdfviewer.ui.components.WidthOption
 import com.ivantrykosh.app.multipdfviewer.ui.theme.Typography
 import com.ivantrykosh.app.multipdfviewer.ui.viewmodel.PdfViewerViewModel
 import com.ivantrykosh.app.multipdfviewer.ui.viewmodel.PdfViewerViewModelState
 import com.rizzi.bouquet.VerticalPDFReader
-import com.rizzi.bouquet.common.DrawingPath
-import com.rizzi.bouquet.common.draw
 
 private const val PDF_MIME = "application/pdf"
 
@@ -58,7 +61,14 @@ internal fun PdfViewRoute(
         startDrawing = pdfViewerViewModel::startDrawing,
         addPointToCurrentPath = pdfViewerViewModel::addPointToCurrentPath,
         finishCurrentPath = pdfViewerViewModel::finishCurrentPath,
-        onDrawClick = pdfViewerViewModel::onDrawClick
+        onDrawClick = pdfViewerViewModel::onDrawClick,
+        onChooseColorClick = pdfViewerViewModel::onChooseColorClick,
+        onPencilClick = pdfViewerViewModel::onPencilClick,
+        onHighlighterClick = pdfViewerViewModel::onHighlighterClick,
+        onUndoLastDrawClick = pdfViewerViewModel::onUndoLastDrawClick,
+        onExitDrawingClick = pdfViewerViewModel::onExitDrawingClick,
+        onSelectColor = pdfViewerViewModel::onSelectColor,
+        onSelectWidth = pdfViewerViewModel::onSelectWidth
     )
 }
 
@@ -71,7 +81,14 @@ fun PdfViewScreen(
     startDrawing: (point: Offset, pageIndex: Int, pageWidth: Float, pageHeight: Float, isLeft: Boolean) -> Unit,
     addPointToCurrentPath: (point: Offset, pageWidth: Float, pageHeight: Float, isLeft: Boolean) -> Unit,
     finishCurrentPath: (isLeft: Boolean) -> Unit,
-    onDrawClick: () -> Unit
+    onDrawClick: () -> Unit,
+    onChooseColorClick: () -> Unit,
+    onPencilClick: () -> Unit,
+    onHighlighterClick: () -> Unit,
+    onUndoLastDrawClick: () -> Unit,
+    onExitDrawingClick: () -> Unit,
+    onSelectColor: (color: Color) -> Unit,
+    onSelectWidth: (width: WidthOption) -> Unit
 ) {
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -101,12 +118,16 @@ fun PdfViewScreen(
                         currentPathPoints = uiState.currentPathPoints,
                         onDrawStart = { point, page, width, height -> startDrawing(point, page, width, height, true) },
                         onDraw = { point, width, height -> addPointToCurrentPath(point,width, height,true) },
-                        onDrawEnd = { finishCurrentPath(true) }
+                        onDrawEnd = { finishCurrentPath(true) },
+                        currentStrokeColor = uiState.colorWithAlpha,
+                        currentStrokeWidth = uiState.currentWidth.width
                     )
                 }
 
                 if (uiState.splitView) {
-                    Spacer(modifier = Modifier.width(PdfViewerDimens.spacingSmall).zIndex(1f))
+                    Spacer(modifier = Modifier
+                        .width(PdfViewerDimens.spacingSmall)
+                        .zIndex(1f))
                 }
 
                 AnimatedVisibility(
@@ -123,12 +144,16 @@ fun PdfViewScreen(
                             currentPathPoints = uiState.currentPathPoints2,
                             onDrawStart = { point, page, width, height -> startDrawing(point, page, width, height, false) },
                             onDraw = { point, width, height -> addPointToCurrentPath(point, width, height,false) },
-                            onDrawEnd = { finishCurrentPath(false) }
+                            onDrawEnd = { finishCurrentPath(false) },
+                            currentStrokeColor = uiState.colorWithAlpha,
+                            currentStrokeWidth = uiState.currentWidth.width
                         )
                     }
                 }
             } ?: Text(
-                modifier = Modifier.fillMaxSize().wrapContentSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .wrapContentSize(),
                 text = stringResource(R.string.choose_file_label),
                 style = Typography.titleLarge
             )
@@ -146,7 +171,9 @@ fun PdfViewScreen(
         )
 
         Column(
-            modifier = Modifier.align(Alignment.TopEnd).padding(PdfViewerDimens.spacingNormal),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(PdfViewerDimens.spacingNormal),
             verticalArrangement = Arrangement.spacedBy(PdfViewerDimens.spacingSmall)
         ) {
             IconButton(
@@ -175,21 +202,72 @@ fun PdfViewScreen(
                     }
                 }
 
-                IconButton(
-                    onClick = onDrawClick
-                ) {
-                    if (uiState.isDrawingMode) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_cancel_24),
-                            contentDescription = stringResource(R.string.cancel_button_title)
-                        )
-                    } else {
+                if (uiState.isDrawingMode.not()) {
+                    IconButton(
+                        onClick = onDrawClick
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_draw_24),
                             contentDescription = stringResource(R.string.enter_draw_mode_button_title)
                         )
                     }
                 }
+            }
+        }
+
+        if (uiState.isDrawingMode) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = PdfViewerDimens.spacingBig)
+            ) {
+                Row(
+                    modifier = Modifier.padding(PdfViewerDimens.spacingTiny),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.width(PdfViewerDimens.pickerWidth * 2 + PdfViewerDimens.spacingSmall))
+
+                        AnimatedVisibility(
+                            visible = uiState.colorPickerOpened,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
+                        ) {
+                            VerticalColorPicker(
+                                modifier = Modifier.height(PdfViewerDimens.pickerHeight),
+                                pickedColor = uiState.currentColor,
+                                onSelectColor = onSelectColor
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(PdfViewerDimens.spacingSmall))
+
+                    AnimatedVisibility(
+                        visible = uiState.widthPickerOpened,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        VerticalWidthPicker(
+                            modifier = Modifier.width(PdfViewerDimens.pickerWidth),
+                            selectedWidth = uiState.currentWidth,
+                            onSelectWidth = onSelectWidth
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(PdfViewerDimens.spacingSmall))
+
+                DrawingComponentsOptionsContainer(
+                    modifier = Modifier.padding(horizontal = PdfViewerDimens.spacingLarge),
+                    drawingType = uiState.currentDrawingType,
+                    currentDrawingColor = uiState.currentColor,
+                    onChooseColorClick = onChooseColorClick,
+                    onPencilClick = onPencilClick,
+                    onHighlighterClick = onHighlighterClick,
+                    onUndoLastDrawClick = onUndoLastDrawClick,
+                    onExitDrawingClick = onExitDrawingClick
+                )
             }
         }
     }
@@ -199,13 +277,24 @@ fun PdfViewScreen(
 @Composable
 private fun PdfViewScreenPreview() {
     PdfViewScreen(
-        uiState = PdfViewerViewModelState(),
+        uiState = PdfViewerViewModelState(
+            isDrawingMode = true,
+            widthPickerOpened = true,
+            colorPickerOpened = true
+        ),
         onSingleViewButtonClick = {},
         onSplitViewButtonClick = {},
         onFilePicked = {},
-        addPointToCurrentPath = { _, _, _, _ ->},
+        addPointToCurrentPath = { _, _, _, _ -> },
         finishCurrentPath = {},
-        startDrawing = { _, _ , _, _, _ -> },
-        onDrawClick = {}
+        startDrawing = { _, _, _, _, _ -> },
+        onDrawClick = {},
+        onChooseColorClick = {},
+        onPencilClick = {},
+        onHighlighterClick = {},
+        onUndoLastDrawClick = {},
+        onExitDrawingClick = {},
+        onSelectColor = {},
+        onSelectWidth = {}
     )
 }

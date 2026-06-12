@@ -7,4 +7,7 @@
     <string name="cancel_button_title">Cancel</string>
     <string name="drawing_mode">Drawing mode</string>
     <string name="viewing_mode">Viewing mode</string>
+    <string name="undo_last_drawing_button_title">Undo last drawing</string>
+    <string name="pencil_button_title">Pencil</string>
+    <string name="highlighter_button_title">Highlighter</string>
 </resources>

@@ -2,7 +2,11 @@ package com.ivantrykosh.app.multipdfviewer.ui.viewmodel
 
 import android.net.Uri
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import com.ivantrykosh.app.multipdfviewer.constants.PdfViewerConstants
+import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingType
+import com.ivantrykosh.app.multipdfviewer.ui.components.WidthOption
 import com.rizzi.bouquet.ResourceType
 import com.rizzi.bouquet.VerticalPdfReaderState
 import com.rizzi.bouquet.common.DrawingPath
@@ -97,15 +101,19 @@ internal class PdfViewerViewModel : ViewModel() {
                     uiState.copy(
                         drawingPaths = uiState.drawingPaths + DrawingPath(
                             points = uiState.currentPathPoints,
-                            pageIndex = pageIndex
+                            pageIndex = pageIndex,
+                            color = uiState.colorWithAlpha,
+                            strokeWidth = uiState.currentWidth.width
                         ),
                         currentPathPoints = emptyList(),
-                        currentDrawingPageIndex = null
+                        currentDrawingPageIndex = null,
+                        isLastDrawingOnLeft = true
                     )
                 } else {
                     uiState.copy(
                         currentPathPoints = emptyList(),
-                        currentDrawingPageIndex = null
+                        currentDrawingPageIndex = null,
+                        isLastDrawingOnLeft = true
                     )
                 }
             }
@@ -116,15 +124,19 @@ internal class PdfViewerViewModel : ViewModel() {
                     uiState.copy(
                         drawingPaths2 = uiState.drawingPaths2 + DrawingPath(
                             points = uiState.currentPathPoints2,
-                            pageIndex = pageIndex
+                            pageIndex = pageIndex,
+                            color = uiState.colorWithAlpha,
+                            strokeWidth = uiState.currentWidth.width
                         ),
                         currentPathPoints2 = emptyList(),
-                        currentDrawingPageIndex2 = null
+                        currentDrawingPageIndex2 = null,
+                        isLastDrawingOnLeft = false
                     )
                 } else {
                     uiState.copy(
                         currentPathPoints2 = emptyList(),
-                        currentDrawingPageIndex2 = null
+                        currentDrawingPageIndex2 = null,
+                        isLastDrawingOnLeft = false
                     )
                 }
             }
@@ -133,7 +145,83 @@ internal class PdfViewerViewModel : ViewModel() {
 
     fun onDrawClick() {
         _uiState.update { uiState ->
-            uiState.copy(isDrawingMode = uiState.isDrawingMode.not())
+            uiState.copy(isDrawingMode = true)
+        }
+    }
+
+    fun onSelectWidth(widthOption: WidthOption) {
+        _uiState.update { uiState ->
+            uiState.copy(
+                currentWidth = widthOption
+            )
+        }
+    }
+
+    fun onSelectColor(color: Color) {
+        _uiState.update { uiState ->
+            uiState.copy(
+                currentColor = color
+            )
+        }
+    }
+
+    fun onChooseColorClick() {
+        _uiState.update { uiState ->
+            uiState.copy(
+                colorPickerOpened = uiState.colorPickerOpened.not()
+            )
+        }
+    }
+
+    fun onPencilClick() {
+        _uiState.update { uiState ->
+            if (uiState.currentDrawingType == DrawingType.PENCIL) {
+                uiState.copy(
+                    widthPickerOpened = uiState.widthPickerOpened.not()
+                )
+            } else {
+                uiState.copy(
+                    currentDrawingType = DrawingType.PENCIL
+                )
+            }
+        }
+    }
+
+    fun onHighlighterClick() {
+        _uiState.update { uiState ->
+            if (uiState.currentDrawingType == DrawingType.HIGHLIGHTER) {
+                uiState.copy(
+                    widthPickerOpened = uiState.widthPickerOpened.not()
+                )
+            } else {
+                uiState.copy(
+                    currentDrawingType = DrawingType.HIGHLIGHTER
+                )
+            }
+        }
+    }
+
+    fun onUndoLastDrawClick() {
+        _uiState.update { uiState ->
+            if (uiState.isLastDrawingOnLeft || uiState.splitView.not()) {
+                uiState.copy(
+                    drawingPaths = uiState.drawingPaths.dropLast(1)
+                )
+            } else {
+                uiState.copy(
+                    drawingPaths2 = uiState.drawingPaths2.dropLast(1)
+                )
+            }
+        }
+    }
+
+    fun onExitDrawingClick() {
+        _uiState.update { uiState ->
+            uiState.copy(
+                isDrawingMode = false,
+                colorPickerOpened = false,
+                widthPickerOpened = false
+            )
         }
     }
 }
@@ -149,5 +237,16 @@ data class PdfViewerViewModelState(
     val currentDrawingPageIndex: Int? = null,
     val drawingPaths2: List<DrawingPath> = emptyList(),
     val currentPathPoints2: List<Offset> = emptyList(),
-    val currentDrawingPageIndex2: Int? = null
-)
+    val currentDrawingPageIndex2: Int? = null,
+    val isLastDrawingOnLeft: Boolean = true,
+    val currentWidth: WidthOption = WidthOption.WIDTH_3,
+    val currentColor: Color = Color.Black,
+    val currentDrawingType: DrawingType = DrawingType.PENCIL,
+    val colorPickerOpened: Boolean = false,
+    val widthPickerOpened: Boolean = false
+) {
+    val colorWithAlpha = when (currentDrawingType) {
+        DrawingType.PENCIL -> currentColor
+        DrawingType.HIGHLIGHTER -> currentColor.copy(alpha = PdfViewerConstants.HIGHLIGHTER_COLOR_ALPHA)
+    }
+}

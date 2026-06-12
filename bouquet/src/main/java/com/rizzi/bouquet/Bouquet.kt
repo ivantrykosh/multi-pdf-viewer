@@ -66,7 +66,9 @@ fun VerticalPDFReader(
     currentPathPoints: List<Offset>,
     onDrawStart: (point: Offset, pageIndex: Int, pageWidth: Float, pageHeight: Float) -> Unit,
     onDraw: (point: Offset, pageWidth: Float, pageHeight: Float) -> Unit,
-    onDrawEnd: () -> Unit
+    onDrawEnd: () -> Unit,
+    currentStrokeColor: Color = Color.Black,
+    currentStrokeWidth: Float = 1f
 ) {
     var readerWidth by remember { mutableStateOf(0f) }
     var readerHeight by remember { mutableStateOf(0f) }
@@ -163,7 +165,7 @@ fun VerticalPDFReader(
                                             val point = path.points.first()
                                             drawCircle(
                                                 color = path.color,
-                                                radius = 2.5f,
+                                                radius = path.strokeWidth / 2f,
                                                 center = Offset(point.x * canvasWidth, point.y * canvasHeight)
                                             )
                                         } else {
@@ -178,7 +180,7 @@ fun VerticalPDFReader(
                                             drawPath(
                                                 path = scaledPath,
                                                 color = path.color,
-                                                style = Stroke(width = 5f)
+                                                style = Stroke(width = path.strokeWidth)
                                             )
                                         }
                                     }
@@ -187,8 +189,8 @@ fun VerticalPDFReader(
                                     if (currentPathPoints.size == 1) {
                                         val point = currentPathPoints.first()
                                         drawCircle(
-                                            color = Color.Blue,
-                                            radius = 2.5f,
+                                            color = currentStrokeColor,
+                                            radius = currentStrokeWidth / 2f,
                                             center = Offset(point.x * canvasWidth, point.y * canvasHeight)
                                         )
                                     } else {
@@ -202,8 +204,8 @@ fun VerticalPDFReader(
 
                                         drawPath(
                                             path = scaledPath,
-                                            color = Color.Blue,
-                                            style = Stroke(width = 5f)
+                                            color = currentStrokeColor,
+                                            style = Stroke(width = currentStrokeWidth)
                                         )
                                     }
                                 }
