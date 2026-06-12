@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "MultiPdfViewer"
 include(":app")
+include(":bouquet")

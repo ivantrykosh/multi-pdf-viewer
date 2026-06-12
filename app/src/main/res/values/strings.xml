@@ -3,4 +3,6 @@
     <string name="split_view_button_title">Split view</string>
     <string name="single_view_button_title">Single view</string>
     <string name="choose_file_label">Choose file</string>
+    <string name="enter_draw_mode_button_title">Draw</string>
+    <string name="cancel_button_title">Cancel</string>
 </resources>
