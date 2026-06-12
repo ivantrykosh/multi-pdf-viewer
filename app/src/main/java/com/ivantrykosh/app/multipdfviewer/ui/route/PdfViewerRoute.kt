@@ -68,7 +68,7 @@ fun PdfViewScreen(
     onSplitViewButtonClick: () -> Unit,
     onSingleViewButtonClick: () -> Unit,
     onFilePicked: (fileUri: Uri?) -> Unit,
-    startDrawing: (point: Offset, pageIndex: Int, isLeft: Boolean, pageWidth: Float, pageHeight: Float) -> Unit,
+    startDrawing: (point: Offset, pageIndex: Int, pageWidth: Float, pageHeight: Float, isLeft: Boolean) -> Unit,
     addPointToCurrentPath: (point: Offset, pageWidth: Float, pageHeight: Float, isLeft: Boolean) -> Unit,
     finishCurrentPath: (isLeft: Boolean) -> Unit,
     onDrawClick: () -> Unit
@@ -90,7 +90,7 @@ fun PdfViewScreen(
                 .statusBarsPadding()
                 .padding(horizontal = PdfViewerDimens.spacingNormal)
         ) {
-            uiState.fileUri?.let { fileUri ->
+            uiState.fileUri?.let {
                 uiState.leftViewReaderState?.let { readerState ->
                     VerticalPDFReader(
                         state = readerState,
@@ -99,8 +99,8 @@ fun PdfViewScreen(
                         drawingPaths = uiState.drawingPaths,
                         currentDrawingPageIndex = uiState.currentDrawingPageIndex ?: 0,
                         currentPathPoints = uiState.currentPathPoints,
-                        onDrawStart = { offset, page, p2, p3 -> startDrawing(offset, page, true, p2, p3) },
-                        onDraw = { offset, p2, p3 -> addPointToCurrentPath(offset, p2, p3,true) },
+                        onDrawStart = { point, page, width, height -> startDrawing(point, page, width, height, true) },
+                        onDraw = { point, width, height -> addPointToCurrentPath(point,width, height,true) },
                         onDrawEnd = { finishCurrentPath(true) }
                     )
                 }
@@ -121,8 +121,8 @@ fun PdfViewScreen(
                             drawingPaths = uiState.drawingPaths2,
                             currentDrawingPageIndex = uiState.currentDrawingPageIndex2 ?: 0,
                             currentPathPoints = uiState.currentPathPoints2,
-                            onDrawStart = { offset, page, p2, p3 -> startDrawing(offset, page, false, p2, p3) },
-                            onDraw = { offset, p2, p3 -> addPointToCurrentPath(offset, p2, p3,false) },
+                            onDrawStart = { point, page, width, height -> startDrawing(point, page, width, height, false) },
+                            onDraw = { point, width, height -> addPointToCurrentPath(point, width, height,false) },
                             onDrawEnd = { finishCurrentPath(false) }
                         )
                     }
@@ -135,7 +135,11 @@ fun PdfViewScreen(
         }
 
         Text(
-            text = if (uiState.isDrawingMode) "Режим малювання" else "Режим перегляду",
+            text = if (uiState.isDrawingMode) {
+                stringResource(R.string.drawing_mode)
+            } else {
+                stringResource(R.string.viewing_mode)
+            },
             modifier = Modifier.align(Alignment.TopCenter),
             style = MaterialTheme.typography.titleMedium,
             color = Color.Black

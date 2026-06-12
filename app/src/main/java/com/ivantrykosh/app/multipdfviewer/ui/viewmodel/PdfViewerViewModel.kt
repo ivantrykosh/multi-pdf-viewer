@@ -49,22 +49,20 @@ internal class PdfViewerViewModel : ViewModel() {
         }
     }
 
-    fun startDrawing(point: Offset, pageIndex: Int, isLeft: Boolean = true, pageWidth: Float, pageHeight: Float) {
+    fun startDrawing(point: Offset, pageIndex: Int, pageWidth: Float, pageHeight: Float, isLeft: Boolean = true) {
         val relativePoint = Offset(
             x = point.x / pageWidth,
             y = point.y / pageHeight
         )
 
-        if (isLeft) {
-            _uiState.update { state ->
-                state.copy(
+        _uiState.update { uiState ->
+            if (isLeft) {
+                uiState.copy(
                     currentPathPoints = listOf(relativePoint),
                     currentDrawingPageIndex = pageIndex
                 )
-            }
-        } else {
-            _uiState.update { state ->
-                state.copy(
+            } else {
+                uiState.copy(
                     currentPathPoints2 = listOf(relativePoint),
                     currentDrawingPageIndex2 = pageIndex
                 )
@@ -72,36 +70,20 @@ internal class PdfViewerViewModel : ViewModel() {
         }
     }
 
-    fun addPointToCurrentPath(point: Offset, isLeft: Boolean = true) {
-        if (isLeft) {
-            _uiState.update { state ->
-                state.copy(
-                    currentPathPoints = state.currentPathPoints + point
-                )
-            }
-        } else {
-            _uiState.update { state ->
-                state.copy(
-                    currentPathPoints2 = state.currentPathPoints2 + point
-                )
-            }
-        }
-    }
-
     fun addPointToCurrentPath(point: Offset, pageWidth: Float, pageHeight: Float, isLeft: Boolean = true) {
-        _uiState.update { state ->
-            val relativePoint = Offset(
-                x = point.x / pageWidth,
-                y = point.y / pageHeight
-            )
+        val relativePoint = Offset(
+            x = point.x / pageWidth,
+            y = point.y / pageHeight
+        )
 
+        _uiState.update { uiState ->
             if (isLeft) {
-                state.copy(
-                    currentPathPoints = state.currentPathPoints + relativePoint
+                uiState.copy(
+                    currentPathPoints = uiState.currentPathPoints + relativePoint
                 )
             } else {
-                state.copy(
-                    currentPathPoints2 = state.currentPathPoints2 + relativePoint
+                uiState.copy(
+                    currentPathPoints2 = uiState.currentPathPoints2 + relativePoint
                 )
             }
         }
@@ -109,38 +91,38 @@ internal class PdfViewerViewModel : ViewModel() {
 
     fun finishCurrentPath(isLeft: Boolean = true) {
         if (isLeft) {
-            _uiState.update { state ->
-                val pageIndex = state.currentDrawingPageIndex
-                if (state.currentPathPoints.isNotEmpty() && pageIndex != null) {
-                    state.copy(
-                        drawingPaths = state.drawingPaths + DrawingPath(
-                            points = state.currentPathPoints,
+            _uiState.update { uiState ->
+                val pageIndex = uiState.currentDrawingPageIndex
+                if (uiState.currentPathPoints.isNotEmpty() && pageIndex != null) {
+                    uiState.copy(
+                        drawingPaths = uiState.drawingPaths + DrawingPath(
+                            points = uiState.currentPathPoints,
                             pageIndex = pageIndex
                         ),
                         currentPathPoints = emptyList(),
                         currentDrawingPageIndex = null
                     )
                 } else {
-                    state.copy(
+                    uiState.copy(
                         currentPathPoints = emptyList(),
                         currentDrawingPageIndex = null
                     )
                 }
             }
         } else {
-            _uiState.update { state ->
-                val pageIndex = state.currentDrawingPageIndex2
-                if (state.currentPathPoints2.isNotEmpty() && pageIndex != null) {
-                    state.copy(
-                        drawingPaths2 = state.drawingPaths2 + DrawingPath(
-                            points = state.currentPathPoints2,
+            _uiState.update { uiState ->
+                val pageIndex = uiState.currentDrawingPageIndex2
+                if (uiState.currentPathPoints2.isNotEmpty() && pageIndex != null) {
+                    uiState.copy(
+                        drawingPaths2 = uiState.drawingPaths2 + DrawingPath(
+                            points = uiState.currentPathPoints2,
                             pageIndex = pageIndex
                         ),
                         currentPathPoints2 = emptyList(),
                         currentDrawingPageIndex2 = null
                     )
                 } else {
-                    state.copy(
+                    uiState.copy(
                         currentPathPoints2 = emptyList(),
                         currentDrawingPageIndex2 = null
                     )

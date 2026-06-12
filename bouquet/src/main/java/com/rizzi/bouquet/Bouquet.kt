@@ -6,7 +6,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.scrollBy
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -33,8 +31,8 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -51,14 +49,12 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.rizzi.bouquet.common.DrawingPath
-import com.rizzi.bouquet.common.draw
 import com.rizzi.bouquet.network.getDownloadInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
-
 
 @Composable
 fun VerticalPDFReader(
@@ -68,23 +64,26 @@ fun VerticalPDFReader(
     drawingPaths: List<DrawingPath>,
     currentDrawingPageIndex: Int,
     currentPathPoints: List<Offset>,
-    onDrawStart: (Offset, Int, pageWidth: Float, pageHeight: Float) -> Unit,
+    onDrawStart: (point: Offset, pageIndex: Int, pageWidth: Float, pageHeight: Float) -> Unit,
     onDraw: (point: Offset, pageWidth: Float, pageHeight: Float) -> Unit,
-    onDrawEnd: (Int) -> Unit
+    onDrawEnd: () -> Unit
 ) {
     var readerWidth by remember { mutableStateOf(0f) }
     var readerHeight by remember { mutableStateOf(0f) }
 
     BoxWithConstraints(
-        modifier = modifier.clipToBounds().onGloballyPositioned { coordinates ->
-            readerWidth = coordinates.size.width.toFloat()
-            readerHeight = coordinates.size.height.toFloat()
-        },
+        modifier = modifier
+            .clipToBounds()
+            .onGloballyPositioned { coordinates ->
+                readerWidth = coordinates.size.width.toFloat()
+                readerHeight = coordinates.size.height.toFloat()
+            },
         contentAlignment = Alignment.TopCenter
     ) {
         val ctx = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         val lazyState = state.lazyState
+
         DisposableEffect(key1 = Unit) {
             load(
                 coroutineScope,
@@ -94,15 +93,19 @@ fun VerticalPDFReader(
                 constraints.maxHeight,
                 true
             )
+
             onDispose {
                 state.close()
             }
         }
+
         state.pdfRender?.let { pdf ->
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .tapToZoomVertical(state, isDrawingMode,
+                    .tapToZoomVertical(
+                        state = state,
+                        isDrawingMode = isDrawingMode,
                         boxWidth = if (readerWidth > 0f) readerWidth else constraints.maxWidth.toFloat(),
                         boxHeight = if (readerHeight > 0f) readerHeight else constraints.maxHeight.toFloat()
                     ),
@@ -117,12 +120,16 @@ fun VerticalPDFReader(
                             pdf.pageLists[pageIndex].recycle()
                         }
                     }
+
                     var pageWidth by remember { mutableStateOf<Float?>(null) }
                     var pageHeight by remember { mutableStateOf<Float?>(null) }
-                    Box(modifier = Modifier.onGloballyPositioned {
-                        pageWidth = it.size.width.toFloat()
-                        pageHeight = it.size.height.toFloat()
-                    }) {
+                    Box(
+                        modifier = Modifier
+                            .onGloballyPositioned {
+                                pageWidth = it.size.width.toFloat()
+                                pageHeight = it.size.height.toFloat()
+                            }
+                    ) {
                         when (pageContent) {
                             is PageContentInt.PageContent -> {
                                 PdfImage(
@@ -147,7 +154,6 @@ fun VerticalPDFReader(
                                 right = canvasWidth,
                                 bottom = canvasHeight
                             ) {
-
                                 drawingPaths
                                     .filter { it.pageIndex == pageIndex }
                                     .forEach { path ->
@@ -168,6 +174,7 @@ fun VerticalPDFReader(
                                                     lineTo(p.x * canvasWidth, p.y * canvasHeight)
                                                 }
                                             }
+
                                             drawPath(
                                                 path = scaledPath,
                                                 color = path.color,
@@ -192,6 +199,7 @@ fun VerticalPDFReader(
                                                 lineTo(p.x * canvasWidth, p.y * canvasHeight)
                                             }
                                         }
+
                                         drawPath(
                                             path = scaledPath,
                                             color = Color.Blue,
@@ -228,46 +236,9 @@ fun VerticalPDFReader(
                                                 }
                                             }
 
-                                            onDrawEnd(pageIndex)
+                                            onDrawEnd()
                                         }
                                     }
-//                                    .pointerInput(Unit) {
-//                                        awaitEachGesture {
-//                                            val down = awaitFirstDown(requireUnconsumed = false)
-//
-//                                            onDrawStart(down.position, pageIndex, pageWidth ?: 0f, pageHeight ?: 0f)
-//
-//                                            var pointer = down
-//                                            while (true) {
-//                                                val event = awaitPointerEvent()
-//                                                val anyPressed = event.changes.any { it.pressed }
-//
-//                                                if (!anyPressed) break
-//
-//                                                val pointerChange = event.changes.firstOrNull { it.id == pointer.id } ?: break
-//
-//                                                if (pointerChange.positionChanged()) {
-//                                                    pointerChange.consume()
-//                                                    onDraw(pointerChange.position, pageWidth ?: 0f, pageHeight ?: 0f)
-//                                                    pointer = pointerChange
-//                                                }
-//                                            }
-//
-//                                            onDrawEnd(pageIndex)
-//                                        }
-//                                    }
-//                                    .pointerInput(Unit) {
-//                                        detectDragGestures(
-//                                            onDragStart = { offset ->
-//                                                println(offset)
-//                                                onDrawStart(offset, pageIndex, pageWidth ?: 0f, pageHeight ?: 0f) },
-//                                            onDrag = { change, _ ->
-//                                                change.consume()
-//                                                onDraw(change.position, pageWidth ?: 0f, pageHeight ?: 0f)
-//                                            },
-//                                            onDragEnd = { onDrawEnd(pageIndex) }
-//                                        )
-//                                    }
                             )
                         }
 
@@ -501,8 +472,9 @@ fun Modifier.tapToZoomVertical(
     }
 ) {
     val coroutineScope = rememberCoroutineScope()
+
     this
-        .pointerInput(isDrawingMode) {
+        .pointerInput(isDrawingMode, boxWidth, boxHeight) {
             if (isDrawingMode) return@pointerInput
             detectTapGestures(
                 onDoubleTap = { tapCenter ->
@@ -524,41 +496,58 @@ fun Modifier.tapToZoomVertical(
                 }
             )
         }
-        .pointerInput(isDrawingMode) {
+        .pointerInput(isDrawingMode, boxWidth, boxHeight) {
             if (isDrawingMode) return@pointerInput
-            detectTransformGestures(true) { centroid, pan, zoom, rotation ->
+            detectTransformGestures(panZoomLock = true) { centroid, pan, zoom, rotation ->
+                if (!state.isZoomEnable) return@detectTransformGestures
+
+                val oldScale = state.scale
+                val newScale = (oldScale * zoom).coerceIn(1.0f, 5.0f)
+
+                val isPinching = zoom != 1.0f
+
                 val pair = if (pan.y > 0) {
-                    if (state.lazyState.canScrollBackward) {
+                    if (state.lazyState.canScrollBackward && !isPinching) {
                         Pair(0f, pan.y)
                     } else {
                         Pair(pan.y, 0f)
                     }
                 } else {
-                    if (state.lazyState.canScrollForward) {
+                    if (state.lazyState.canScrollForward && !isPinching) {
                         Pair(0f, pan.y)
                     } else {
                         Pair(pan.y, 0f)
                     }
                 }
-                val nOffset = if (state.scale > 1f) {
-                    val maxT = (boxWidth * state.scale) - boxWidth
-                    val maxY = (boxHeight * state.scale) - boxHeight
+
+                val centerX = boxWidth / 2f
+                val centerY = boxHeight / 2f
+
+                val zoomXOffset = (centroid.x - centerX) * (1f - zoom)
+                val zoomYOffset = (centroid.y - centerY) * (1f - zoom)
+
+                val targetX = (state.offset.x * zoom) + pan.x + zoomXOffset
+                val targetY = (state.offset.y * zoom) + pair.first + zoomYOffset
+
+                val maxT = (boxWidth * newScale) - boxWidth
+                val maxY = (boxHeight * newScale) - boxHeight
+
+                val nOffset = if (newScale > 1f) {
                     Offset(
-                        x = (state.offset.x + pan.x).coerceIn(
-                            minimumValue = (-maxT / 2) * 1.3f,
-                            maximumValue = (maxT / 2) * 1.3f
-                        ),
-                        y = (state.offset.y + pair.first).coerceIn(
-                            minimumValue = (-maxY / 2),
-                            maximumValue = (maxY / 2)
-                        )
+                        x = targetX.coerceIn((-maxT / 2) * 1.3f, (maxT / 2) * 1.3f),
+                        y = targetY.coerceIn(-maxY / 2, maxY / 2)
                     )
                 } else {
                     Offset(0f, 0f)
                 }
+
+                state.mScale = newScale
                 state.offset = nOffset
-                coroutineScope.launch {
-                    state.lazyState.scrollBy((-pair.second / state.scale))
+
+                if (!isPinching && pair.second != 0f) {
+                    coroutineScope.launch {
+                        state.lazyState.scrollBy((-pair.second / state.scale))
+                    }
                 }
             }
         }
@@ -567,6 +556,7 @@ fun Modifier.tapToZoomVertical(
             scaleY = state.scale
             translationX = state.offset.x
             translationY = state.offset.y
+            this.transformOrigin = TransformOrigin.Center
             clip = true
         }
 }

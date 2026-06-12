@@ -5,4 +5,6 @@
     <string name="choose_file_label">Choose file</string>
     <string name="enter_draw_mode_button_title">Draw</string>
     <string name="cancel_button_title">Cancel</string>
+    <string name="drawing_mode">Drawing mode</string>
+    <string name="viewing_mode">Viewing mode</string>
 </resources>
