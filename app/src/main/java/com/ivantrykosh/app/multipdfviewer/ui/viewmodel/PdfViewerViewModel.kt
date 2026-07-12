@@ -165,23 +165,18 @@ internal class PdfViewerViewModel : ViewModel() {
         }
     }
 
-    fun onChooseColorClick() {
-        _uiState.update { uiState ->
-            uiState.copy(
-                colorPickerOpened = uiState.colorPickerOpened.not()
-            )
-        }
-    }
-
     fun onPencilClick() {
         _uiState.update { uiState ->
             if (uiState.currentDrawingType == DrawingType.PENCIL) {
                 uiState.copy(
-                    widthPickerOpened = uiState.widthPickerOpened.not()
+                    widthPickerOpened = uiState.widthPickerOpened.not(),
+                    colorPickerOpened = uiState.colorPickerOpened.not()
                 )
             } else {
                 uiState.copy(
-                    currentDrawingType = DrawingType.PENCIL
+                    currentDrawingType = DrawingType.PENCIL,
+                    widthPickerOpened = true,
+                    colorPickerOpened = true
                 )
             }
         }
@@ -191,11 +186,14 @@ internal class PdfViewerViewModel : ViewModel() {
         _uiState.update { uiState ->
             if (uiState.currentDrawingType == DrawingType.HIGHLIGHTER) {
                 uiState.copy(
-                    widthPickerOpened = uiState.widthPickerOpened.not()
+                    widthPickerOpened = uiState.widthPickerOpened.not(),
+                    colorPickerOpened = uiState.colorPickerOpened.not()
                 )
             } else {
                 uiState.copy(
-                    currentDrawingType = DrawingType.HIGHLIGHTER
+                    currentDrawingType = DrawingType.HIGHLIGHTER,
+                    widthPickerOpened = true,
+                    colorPickerOpened = true
                 )
             }
         }

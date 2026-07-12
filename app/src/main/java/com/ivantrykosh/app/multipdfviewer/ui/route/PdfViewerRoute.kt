@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
@@ -62,7 +64,6 @@ internal fun PdfViewRoute(
         addPointToCurrentPath = pdfViewerViewModel::addPointToCurrentPath,
         finishCurrentPath = pdfViewerViewModel::finishCurrentPath,
         onDrawClick = pdfViewerViewModel::onDrawClick,
-        onChooseColorClick = pdfViewerViewModel::onChooseColorClick,
         onPencilClick = pdfViewerViewModel::onPencilClick,
         onHighlighterClick = pdfViewerViewModel::onHighlighterClick,
         onUndoLastDrawClick = pdfViewerViewModel::onUndoLastDrawClick,
@@ -82,7 +83,6 @@ fun PdfViewScreen(
     addPointToCurrentPath: (point: Offset, pageWidth: Float, pageHeight: Float, isLeft: Boolean) -> Unit,
     finishCurrentPath: (isLeft: Boolean) -> Unit,
     onDrawClick: () -> Unit,
-    onChooseColorClick: () -> Unit,
     onPencilClick: () -> Unit,
     onHighlighterClick: () -> Unit,
     onUndoLastDrawClick: () -> Unit,
@@ -153,7 +153,8 @@ fun PdfViewScreen(
             } ?: Text(
                 modifier = Modifier
                     .fillMaxSize()
-                    .wrapContentSize(),
+                    .wrapContentSize()
+                    .clickable(onClick = launchFilePicker),
                 text = stringResource(R.string.choose_file_label),
                 style = Typography.titleLarge
             )
@@ -249,7 +250,10 @@ fun PdfViewScreen(
                         exit = fadeOut() + shrinkVertically()
                     ) {
                         VerticalWidthPicker(
-                            modifier = Modifier.width(PdfViewerDimens.pickerWidth),
+                            modifier = Modifier.size(
+                                width = PdfViewerDimens.pickerWidth,
+                                height = PdfViewerDimens.pickerHeight
+                            ),
                             selectedWidth = uiState.currentWidth,
                             onSelectWidth = onSelectWidth
                         )
@@ -261,8 +265,6 @@ fun PdfViewScreen(
                 DrawingComponentsOptionsContainer(
                     modifier = Modifier.padding(horizontal = PdfViewerDimens.spacingLarge),
                     drawingType = uiState.currentDrawingType,
-                    currentDrawingColor = uiState.currentColor,
-                    onChooseColorClick = onChooseColorClick,
                     onPencilClick = onPencilClick,
                     onHighlighterClick = onHighlighterClick,
                     onUndoLastDrawClick = onUndoLastDrawClick,
@@ -289,7 +291,6 @@ private fun PdfViewScreenPreview() {
         finishCurrentPath = {},
         startDrawing = { _, _, _, _, _ -> },
         onDrawClick = {},
-        onChooseColorClick = {},
         onPencilClick = {},
         onHighlighterClick = {},
         onUndoLastDrawClick = {},

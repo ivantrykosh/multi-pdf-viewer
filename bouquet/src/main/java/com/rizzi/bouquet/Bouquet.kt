@@ -32,6 +32,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -180,7 +182,11 @@ fun VerticalPDFReader(
                                             drawPath(
                                                 path = scaledPath,
                                                 color = path.color,
-                                                style = Stroke(width = path.strokeWidth)
+                                                style = Stroke(
+                                                    width = path.strokeWidth,
+                                                    cap = StrokeCap.Round,
+                                                    join = StrokeJoin.Round
+                                                )
                                             )
                                         }
                                     }
@@ -205,7 +211,11 @@ fun VerticalPDFReader(
                                         drawPath(
                                             path = scaledPath,
                                             color = currentStrokeColor,
-                                            style = Stroke(width = currentStrokeWidth)
+                                            style = Stroke(
+                                                width = currentStrokeWidth,
+                                                cap = StrokeCap.Round,
+                                                join = StrokeJoin.Round
+                                            )
                                         )
                                     }
                                 }

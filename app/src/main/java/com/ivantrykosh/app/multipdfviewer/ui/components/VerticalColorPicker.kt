@@ -73,6 +73,23 @@ internal fun VerticalColorPicker(
         )
     }
 
+    val mixerThumbColor = remember(hue, mixPosition) {
+        val currentColor = if (mixPosition <= 0.5f) {
+            val saturation = mixPosition * 2f
+            Color.hsv(hue = hue, saturation = saturation, value = 1f)
+        } else {
+            val value = 1f - ((mixPosition - 0.5f) * 2f)
+            Color.hsv(hue = hue, saturation = 1f, value = value)
+        }
+
+        Color(
+            red = 1f - currentColor.red,
+            green = 1f - currentColor.green,
+            blue = 1f - currentColor.blue,
+            alpha = 1f
+        )
+    }
+
     fun updateHue(y: Float, height: Int) {
         val fraction = (y / height).coerceIn(0f, 1f)
         hue = fraction * 360f
@@ -153,7 +170,7 @@ internal fun VerticalColorPicker(
                     .height(sliderHeight)
                     .offset(y = thumbY - sliderHeight / 2)
                     .background(
-                        color = if (mixPosition > CHANGE_COLOR_THRESHOLD) Color.White else Color.Black,
+                        color = mixerThumbColor,
                         shape = RoundedCornerShape(PdfViewerDimens.sliderCornerRadius)
                     )
             )
@@ -161,7 +178,6 @@ internal fun VerticalColorPicker(
     }
 }
 
-private const val CHANGE_COLOR_THRESHOLD = 0.8f
 private val sliderHeight = 6.dp
 
 @Preview

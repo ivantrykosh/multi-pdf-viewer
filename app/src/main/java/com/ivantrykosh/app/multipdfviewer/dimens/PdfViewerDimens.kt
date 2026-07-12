@@ -12,10 +12,12 @@ object PdfViewerDimens {
     val cornerRadiusNormal = 16.dp
     val cornerRadiusBig = 24.dp
 
+    val iconSizeLarge = 32.dp
+
     val borderTiny = 1.dp
 
     val pickerWidth = 48.dp
-    val pickerHeight = 300.dp
+    val pickerHeight = 200.dp
 
     val sliderCornerRadius = 3.dp
 }

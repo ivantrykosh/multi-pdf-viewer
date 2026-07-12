@@ -43,8 +43,8 @@ internal fun VerticalWidthPicker(
 
             Box(
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .aspectRatio(1f)
                     .clip(CircleShape)
                     .background(
                         color = if (isSelected) Color.DarkGray else Color.Transparent
@@ -73,8 +73,10 @@ private const val WIDTH_INDICATOR_WIDTH_FRACTION = 0.75f
 @Composable
 private fun VerticalWidthPickerPreview() {
     VerticalWidthPicker(
-        modifier = Modifier
-            .width(PdfViewerDimens.pickerWidth),
+        modifier = Modifier.size(
+            width = PdfViewerDimens.pickerWidth,
+            height = PdfViewerDimens.pickerHeight
+        ),
         selectedWidth = WidthOption.WIDTH_3,
         onSelectWidth = {}
     )

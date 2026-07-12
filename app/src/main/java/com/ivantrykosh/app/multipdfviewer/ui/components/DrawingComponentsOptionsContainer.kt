@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -30,8 +31,6 @@ enum class DrawingType {
 internal fun DrawingComponentsOptionsContainer(
     modifier: Modifier = Modifier,
     drawingType: DrawingType,
-    currentDrawingColor: Color,
-    onChooseColorClick: () -> Unit,
     onPencilClick: () -> Unit,
     onHighlighterClick: () -> Unit,
     onUndoLastDrawClick: () -> Unit,
@@ -46,12 +45,6 @@ internal fun DrawingComponentsOptionsContainer(
             .padding(PdfViewerDimens.spacingTiny),
         horizontalArrangement = Arrangement.spacedBy(PdfViewerDimens.spacingSmall)
     ) {
-        IconButton(
-            onClick = onChooseColorClick,
-            painter = null,
-            background = currentDrawingColor
-        )
-
         IconButton(
             onClick = onPencilClick,
             painter = painterResource(R.drawable.baseline_draw_24),
@@ -103,7 +96,10 @@ private fun IconButton(
                 .background(color = background)
         )
 
-        IconButton(onClick = onClick) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.size(PdfViewerDimens.iconSizeLarge)
+        ) {
             painter?.let { painter ->
                 Icon(
                     painter = painter,
@@ -120,8 +116,6 @@ private fun IconButton(
 private fun DrawingComponentsOptionsContainerPreview() {
     DrawingComponentsOptionsContainer(
         drawingType = DrawingType.PENCIL,
-        currentDrawingColor = Color.Red,
-        onChooseColorClick = {},
         onUndoLastDrawClick = {},
         onExitDrawingClick = {},
         onPencilClick = {},
