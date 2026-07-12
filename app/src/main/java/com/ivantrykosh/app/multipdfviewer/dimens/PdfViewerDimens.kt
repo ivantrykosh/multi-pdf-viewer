@@ -9,6 +9,7 @@ object PdfViewerDimens {
     val spacingBig = 24.dp
     val spacingLarge = 32.dp
 
+    val cornerRadiusNormalSpecial = 12.dp
     val cornerRadiusNormal = 16.dp
     val cornerRadiusBig = 24.dp
 

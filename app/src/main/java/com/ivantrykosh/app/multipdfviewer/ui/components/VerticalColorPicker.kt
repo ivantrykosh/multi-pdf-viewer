@@ -178,7 +178,7 @@ internal fun VerticalColorPicker(
     }
 }
 
-private val sliderHeight = 6.dp
+val sliderHeight = 6.dp
 
 @Preview
 @Composable

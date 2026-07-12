@@ -5,8 +5,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import com.ivantrykosh.app.multipdfviewer.constants.PdfViewerConstants
+import com.ivantrykosh.app.multipdfviewer.ui.components.DEFAULT_WIDTH
 import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingType
-import com.ivantrykosh.app.multipdfviewer.ui.components.WidthOption
 import com.rizzi.bouquet.ResourceType
 import com.rizzi.bouquet.VerticalPdfReaderState
 import com.rizzi.bouquet.common.DrawingPath
@@ -103,7 +103,7 @@ internal class PdfViewerViewModel : ViewModel() {
                             points = uiState.currentPathPoints,
                             pageIndex = pageIndex,
                             color = uiState.colorWithAlpha,
-                            strokeWidth = uiState.currentWidth.width
+                            strokeWidth = uiState.currentWidth
                         ),
                         currentPathPoints = emptyList(),
                         currentDrawingPageIndex = null,
@@ -126,7 +126,7 @@ internal class PdfViewerViewModel : ViewModel() {
                             points = uiState.currentPathPoints2,
                             pageIndex = pageIndex,
                             color = uiState.colorWithAlpha,
-                            strokeWidth = uiState.currentWidth.width
+                            strokeWidth = uiState.currentWidth
                         ),
                         currentPathPoints2 = emptyList(),
                         currentDrawingPageIndex2 = null,
@@ -149,7 +149,7 @@ internal class PdfViewerViewModel : ViewModel() {
         }
     }
 
-    fun onSelectWidth(widthOption: WidthOption) {
+    fun onSelectWidth(widthOption: Float) {
         _uiState.update { uiState ->
             uiState.copy(
                 currentWidth = widthOption
@@ -254,7 +254,7 @@ data class PdfViewerViewModelState(
     val currentPathPoints2: List<Offset> = emptyList(),
     val currentDrawingPageIndex2: Int? = null,
     val isLastDrawingOnLeft: Boolean = true,
-    val currentWidth: WidthOption = WidthOption.WIDTH_3,
+    val currentWidth: Float = DEFAULT_WIDTH,
     val currentColor: Color = Color.Black,
     val currentDrawingType: DrawingType = DrawingType.PENCIL,
     val colorPickerOpened: Boolean = false,

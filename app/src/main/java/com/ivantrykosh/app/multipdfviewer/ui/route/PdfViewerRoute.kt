@@ -41,7 +41,6 @@ import com.ivantrykosh.app.multipdfviewer.dimens.PdfViewerDimens
 import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingComponentsOptionsContainer
 import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalColorPicker
 import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalWidthPicker
-import com.ivantrykosh.app.multipdfviewer.ui.components.WidthOption
 import com.ivantrykosh.app.multipdfviewer.ui.theme.Typography
 import com.ivantrykosh.app.multipdfviewer.ui.viewmodel.PdfViewerViewModel
 import com.ivantrykosh.app.multipdfviewer.ui.viewmodel.PdfViewerViewModelState
@@ -90,7 +89,7 @@ fun PdfViewScreen(
     onUndoLastDrawClick: () -> Unit,
     onExitDrawingClick: () -> Unit,
     onSelectColor: (color: Color) -> Unit,
-    onSelectWidth: (width: WidthOption) -> Unit
+    onSelectWidth: (width: Float) -> Unit
 ) {
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -122,7 +121,7 @@ fun PdfViewScreen(
                         onDraw = { point, width, height -> addPointToCurrentPath(point,width, height,true) },
                         onDrawEnd = { finishCurrentPath(true) },
                         currentStrokeColor = uiState.colorWithAlpha,
-                        currentStrokeWidth = uiState.currentWidth.width
+                        currentStrokeWidth = uiState.currentWidth
                     )
                 }
 
@@ -148,7 +147,7 @@ fun PdfViewScreen(
                             onDraw = { point, width, height -> addPointToCurrentPath(point, width, height,false) },
                             onDrawEnd = { finishCurrentPath(false) },
                             currentStrokeColor = uiState.colorWithAlpha,
-                            currentStrokeWidth = uiState.currentWidth.width
+                            currentStrokeWidth = uiState.currentWidth
                         )
                     }
                 }
@@ -257,7 +256,8 @@ fun PdfViewScreen(
                                 height = PdfViewerDimens.pickerHeight
                             ),
                             selectedWidth = uiState.currentWidth,
-                            onSelectWidth = onSelectWidth
+                            onSelectWidth = onSelectWidth,
+                            activeColor = uiState.currentColor
                         )
                     }
                 }

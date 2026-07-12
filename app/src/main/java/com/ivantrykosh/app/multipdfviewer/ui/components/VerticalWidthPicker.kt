@@ -1,73 +1,110 @@
 package com.ivantrykosh.app.multipdfviewer.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.ivantrykosh.app.multipdfviewer.dimens.PdfViewerDimens
 
-enum class WidthOption(val width: Float) {
-    WIDTH_1(1f),
-    WIDTH_3(3f),
-    WIDTH_6(6f),
-    WIDTH_12(12f),
-    WIDTH_20(20f),
-    WIDTH_32(32f)
-}
+const val DEFAULT_WIDTH = 3f
+val widthRange = 1f..50f
 
 @Composable
 internal fun VerticalWidthPicker(
     modifier: Modifier = Modifier,
-    selectedWidth: WidthOption,
-    onSelectWidth: (width: WidthOption) -> Unit
+    selectedWidth: Float,
+    onSelectWidth: (width: Float) -> Unit,
+    activeColor: Color
 ) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(PdfViewerDimens.cornerRadiusBig))
-            .background(Color.LightGray)
-            .padding(vertical = PdfViewerDimens.spacingSmall, horizontal = PdfViewerDimens.spacingTiny),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
-    ) {
-        WidthOption.entries.reversed().forEach { widthItem ->
-            val isSelected = widthItem == selectedWidth
+    var barHeightPx by remember { mutableFloatStateOf(0f) }
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .clip(CircleShape)
-                    .background(
-                        color = if (isSelected) Color.DarkGray else Color.Transparent
-                    )
-                    .clickable { onSelectWidth(widthItem) },
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(WIDTH_INDICATOR_WIDTH_FRACTION)
-                        .height(maxOf(minIndicatorHeight, (widthItem.width / 1.5f).dp))
-                        .background(
-                            if (isSelected) Color.White else Color.Gray,
-                            shape = CircleShape
-                        )
-                )
+    val minWidth = widthRange.start
+    val maxWidth = widthRange.endInclusive
+
+    val fraction = (selectedWidth - minWidth) / (maxWidth - minWidth)
+    val invertedFraction = 1f - fraction
+
+    fun updateWidthFromY(y: Float, height: Int) {
+        val touchFraction = (y / height).coerceIn(0f, 1f)
+        val invertedTouchFraction = 1f - touchFraction
+        val calculatedWidth = minWidth + (invertedTouchFraction * (maxWidth - minWidth))
+        onSelectWidth(calculatedWidth)
+    }
+
+    val thumbColor = remember(activeColor) {
+        Color(
+            red = 1f - activeColor.red,
+            green = 1f - activeColor.green,
+            blue = 1f - activeColor.blue,
+            alpha = 1f
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(PdfViewerDimens.cornerRadiusNormalSpecial))
+            .background(color = activeColor.copy(alpha = BACKGROUND_COLOR_ALPHA))
+            .onGloballyPositioned { barHeightPx = it.size.height.toFloat() }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = { offset -> updateWidthFromY(offset.y, size.height) })
             }
+            .pointerInput(Unit) {
+                detectDragGestures { change, _ ->
+                    change.consume()
+                    updateWidthFromY(change.position.y, size.height)
+                }
+            }
+            .drawWithContent {
+                val centerX = size.width / 2f
+                val minHalfWidth = minWidth / 2
+                val maxHalfWidth = maxWidth / 2
+
+                val trianglePath = Path().apply {
+                    moveTo(centerX - maxHalfWidth, 0f)
+                    lineTo(centerX + maxHalfWidth, 0f)
+
+                    lineTo(centerX + minHalfWidth, size.height)
+                    lineTo(centerX - minHalfWidth, size.height)
+                    close()
+                }
+
+                drawPath(
+                    path = trianglePath,
+                    color = activeColor
+                )
+
+                drawContent()
+            }
+    ) {
+        val thumbY = with(LocalDensity.current) {
+            (invertedFraction * barHeightPx).toDp()
         }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(sliderHeight)
+                .offset(y = thumbY - sliderHeight / 2)
+                .background(
+                    color = thumbColor,
+                    shape = RoundedCornerShape(PdfViewerDimens.sliderCornerRadius)
+                )
+        )
     }
 }
 
-private val minIndicatorHeight = 1.dp
-private const val WIDTH_INDICATOR_WIDTH_FRACTION = 0.75f
+private const val BACKGROUND_COLOR_ALPHA = 0.25F
 
 @Preview
 @Composable
@@ -77,7 +114,8 @@ private fun VerticalWidthPickerPreview() {
             width = PdfViewerDimens.pickerWidth,
             height = PdfViewerDimens.pickerHeight
         ),
-        selectedWidth = WidthOption.WIDTH_3,
-        onSelectWidth = {}
+        selectedWidth = 50f,
+        onSelectWidth = {},
+        activeColor = Color.Red
     )
 }
