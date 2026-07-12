@@ -222,6 +222,23 @@ internal class PdfViewerViewModel : ViewModel() {
             )
         }
     }
+
+    fun onEraserClick() {
+        _uiState.update { uiState ->
+            if (uiState.currentDrawingType == DrawingType.ERASER) {
+                uiState.copy(
+                    widthPickerOpened = uiState.widthPickerOpened.not(),
+                    colorPickerOpened = false
+                )
+            } else {
+                uiState.copy(
+                    currentDrawingType = DrawingType.ERASER,
+                    widthPickerOpened = true,
+                    colorPickerOpened = false
+                )
+            }
+        }
+    }
 }
 
 data class PdfViewerViewModelState(
@@ -246,5 +263,6 @@ data class PdfViewerViewModelState(
     val colorWithAlpha = when (currentDrawingType) {
         DrawingType.PENCIL -> currentColor
         DrawingType.HIGHLIGHTER -> currentColor.copy(alpha = PdfViewerConstants.HIGHLIGHTER_COLOR_ALPHA)
+        DrawingType.ERASER -> Color.Transparent
     }
 }

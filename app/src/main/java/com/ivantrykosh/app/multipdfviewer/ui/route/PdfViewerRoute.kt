@@ -69,7 +69,8 @@ internal fun PdfViewRoute(
         onUndoLastDrawClick = pdfViewerViewModel::onUndoLastDrawClick,
         onExitDrawingClick = pdfViewerViewModel::onExitDrawingClick,
         onSelectColor = pdfViewerViewModel::onSelectColor,
-        onSelectWidth = pdfViewerViewModel::onSelectWidth
+        onSelectWidth = pdfViewerViewModel::onSelectWidth,
+        onEraserClick = pdfViewerViewModel::onEraserClick
     )
 }
 
@@ -85,6 +86,7 @@ fun PdfViewScreen(
     onDrawClick: () -> Unit,
     onPencilClick: () -> Unit,
     onHighlighterClick: () -> Unit,
+    onEraserClick: () -> Unit,
     onUndoLastDrawClick: () -> Unit,
     onExitDrawingClick: () -> Unit,
     onSelectColor: (color: Color) -> Unit,
@@ -267,6 +269,7 @@ fun PdfViewScreen(
                     drawingType = uiState.currentDrawingType,
                     onPencilClick = onPencilClick,
                     onHighlighterClick = onHighlighterClick,
+                    onEraserClick = onEraserClick,
                     onUndoLastDrawClick = onUndoLastDrawClick,
                     onExitDrawingClick = onExitDrawingClick
                 )
@@ -296,6 +299,7 @@ private fun PdfViewScreenPreview() {
         onUndoLastDrawClick = {},
         onExitDrawingClick = {},
         onSelectColor = {},
-        onSelectWidth = {}
+        onSelectWidth = {},
+        onEraserClick = {}
     )
 }

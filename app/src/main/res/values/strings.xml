@@ -10,4 +10,5 @@
     <string name="undo_last_drawing_button_title">Undo last drawing</string>
     <string name="pencil_button_title">Pencil</string>
     <string name="highlighter_button_title">Highlighter</string>
+    <string name="eraser_button_title">Eraser</string>
 </resources>

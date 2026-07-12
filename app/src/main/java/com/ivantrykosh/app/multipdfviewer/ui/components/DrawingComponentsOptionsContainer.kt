@@ -24,7 +24,7 @@ import com.ivantrykosh.app.multipdfviewer.R
 import com.ivantrykosh.app.multipdfviewer.dimens.PdfViewerDimens
 
 enum class DrawingType {
-    PENCIL, HIGHLIGHTER
+    PENCIL, HIGHLIGHTER, ERASER
 }
 
 @Composable
@@ -33,6 +33,7 @@ internal fun DrawingComponentsOptionsContainer(
     drawingType: DrawingType,
     onPencilClick: () -> Unit,
     onHighlighterClick: () -> Unit,
+    onEraserClick: () -> Unit,
     onUndoLastDrawClick: () -> Unit,
     onExitDrawingClick: () -> Unit
 ) {
@@ -59,6 +60,14 @@ internal fun DrawingComponentsOptionsContainer(
             contentDescription = stringResource(R.string.highlighter_button_title),
             background = if (drawingType == DrawingType.HIGHLIGHTER) Color.DarkGray else Color.LightGray,
             tint = if (drawingType == DrawingType.HIGHLIGHTER) Color.White else Color.Black
+        )
+
+        IconButton(
+            onClick = onEraserClick,
+            painter = painterResource(R.drawable.outline_eraser_24),
+            contentDescription = stringResource(R.string.eraser_button_title),
+            background = if (drawingType == DrawingType.ERASER) Color.DarkGray else Color.LightGray,
+            tint = if (drawingType == DrawingType.ERASER) Color.White else Color.Black
         )
 
         IconButton(
@@ -119,6 +128,7 @@ private fun DrawingComponentsOptionsContainerPreview() {
         onUndoLastDrawClick = {},
         onExitDrawingClick = {},
         onPencilClick = {},
-        onHighlighterClick = {}
+        onHighlighterClick = {},
+        onEraserClick = {}
     )
 }

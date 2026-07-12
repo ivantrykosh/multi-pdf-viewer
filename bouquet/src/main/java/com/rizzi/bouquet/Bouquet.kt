@@ -30,7 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -148,7 +150,11 @@ fun VerticalPDFReader(
                             )
                         }
 
-                        Canvas(modifier = Modifier.matchParentSize()) {
+                        Canvas(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                        ) {
                             val canvasWidth = size.width
                             val canvasHeight = size.height
 
@@ -163,12 +169,15 @@ fun VerticalPDFReader(
                                     .forEach { path ->
                                         if (path.points.isEmpty()) return@forEach
 
+                                        val isEraser = path.color == Color.Transparent
+
                                         if (path.points.size == 1) {
                                             val point = path.points.first()
                                             drawCircle(
                                                 color = path.color,
                                                 radius = path.strokeWidth / 2f,
-                                                center = Offset(point.x * canvasWidth, point.y * canvasHeight)
+                                                center = Offset(point.x * canvasWidth, point.y * canvasHeight),
+                                                blendMode = if (isEraser) BlendMode.Clear else BlendMode.SrcOver
                                             )
                                         } else {
                                             val scaledPath = Path().apply {
@@ -186,18 +195,22 @@ fun VerticalPDFReader(
                                                     width = path.strokeWidth,
                                                     cap = StrokeCap.Round,
                                                     join = StrokeJoin.Round
-                                                )
+                                                ),
+                                                blendMode = if (isEraser) BlendMode.Clear else BlendMode.SrcOver
                                             )
                                         }
                                     }
 
                                 if (currentDrawingPageIndex == pageIndex && currentPathPoints.isNotEmpty()) {
+                                    val isCurrentEraser = currentStrokeColor == Color.Transparent
+
                                     if (currentPathPoints.size == 1) {
                                         val point = currentPathPoints.first()
                                         drawCircle(
                                             color = currentStrokeColor,
                                             radius = currentStrokeWidth / 2f,
-                                            center = Offset(point.x * canvasWidth, point.y * canvasHeight)
+                                            center = Offset(point.x * canvasWidth, point.y * canvasHeight),
+                                            blendMode = if (isCurrentEraser) BlendMode.Clear else BlendMode.SrcOver
                                         )
                                     } else {
                                         val scaledPath = Path().apply {
@@ -215,7 +228,8 @@ fun VerticalPDFReader(
                                                 width = currentStrokeWidth,
                                                 cap = StrokeCap.Round,
                                                 join = StrokeJoin.Round
-                                            )
+                                            ),
+                                            blendMode = if (isCurrentEraser) BlendMode.Clear else BlendMode.SrcOver
                                         )
                                     }
                                 }
