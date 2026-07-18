@@ -11,4 +11,7 @@
     <string name="pencil_button_title">Pencil</string>
     <string name="highlighter_button_title">Highlighter</string>
     <string name="eraser_button_title">Eraser</string>
+    <string name="lines_mode_draw_title">Simple drawing</string>
+    <string name="lines_mode_lines_title">Straight lines</string>
+    <string name="lines_mode_snapped_lines_title">Snapped lines</string>
 </resources>

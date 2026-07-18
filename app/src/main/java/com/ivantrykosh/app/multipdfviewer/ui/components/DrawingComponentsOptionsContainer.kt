@@ -89,7 +89,7 @@ internal fun DrawingComponentsOptionsContainer(
 }
 
 @Composable
-private fun IconButton(
+fun IconButton(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     painter: Painter?,

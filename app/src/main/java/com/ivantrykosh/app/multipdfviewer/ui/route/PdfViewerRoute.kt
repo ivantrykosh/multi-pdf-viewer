@@ -39,7 +39,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ivantrykosh.app.multipdfviewer.R
 import com.ivantrykosh.app.multipdfviewer.dimens.PdfViewerDimens
 import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingComponentsOptionsContainer
+import com.ivantrykosh.app.multipdfviewer.ui.components.LinesMode
 import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalColorPicker
+import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalLinesModePicker
 import com.ivantrykosh.app.multipdfviewer.ui.components.VerticalWidthPicker
 import com.ivantrykosh.app.multipdfviewer.ui.theme.Typography
 import com.ivantrykosh.app.multipdfviewer.ui.viewmodel.PdfViewerViewModel
@@ -69,7 +71,8 @@ internal fun PdfViewRoute(
         onExitDrawingClick = pdfViewerViewModel::onExitDrawingClick,
         onSelectColor = pdfViewerViewModel::onSelectColor,
         onSelectWidth = pdfViewerViewModel::onSelectWidth,
-        onEraserClick = pdfViewerViewModel::onEraserClick
+        onEraserClick = pdfViewerViewModel::onEraserClick,
+        onSelectLinesMode = pdfViewerViewModel::onSelectLinesMode
     )
 }
 
@@ -89,7 +92,8 @@ fun PdfViewScreen(
     onUndoLastDrawClick: () -> Unit,
     onExitDrawingClick: () -> Unit,
     onSelectColor: (color: Color) -> Unit,
-    onSelectWidth: (width: Float) -> Unit
+    onSelectWidth: (width: Float) -> Unit,
+    onSelectLinesMode: (linesMode: LinesMode) -> Unit
 ) {
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -260,6 +264,23 @@ fun PdfViewScreen(
                             activeColor = uiState.currentColor
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(PdfViewerDimens.spacingSmall))
+
+                    AnimatedVisibility(
+                        visible = uiState.linesModePickerOpened,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        VerticalLinesModePicker(
+                            modifier = Modifier.size(
+                                width = PdfViewerDimens.pickerWidth,
+                                height = PdfViewerDimens.pickerHeight
+                            ),
+                            currentLinesMode = uiState.currentLinesMode,
+                            onSelectLinesMode = onSelectLinesMode
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(PdfViewerDimens.spacingSmall))
@@ -300,6 +321,7 @@ private fun PdfViewScreenPreview() {
         onExitDrawingClick = {},
         onSelectColor = {},
         onSelectWidth = {},
-        onEraserClick = {}
+        onEraserClick = {},
+        onSelectLinesMode = {}
     )
 }

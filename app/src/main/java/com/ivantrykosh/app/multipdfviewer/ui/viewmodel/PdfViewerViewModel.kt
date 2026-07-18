@@ -7,12 +7,18 @@ import androidx.lifecycle.ViewModel
 import com.ivantrykosh.app.multipdfviewer.constants.PdfViewerConstants
 import com.ivantrykosh.app.multipdfviewer.ui.components.DEFAULT_WIDTH
 import com.ivantrykosh.app.multipdfviewer.ui.components.DrawingType
+import com.ivantrykosh.app.multipdfviewer.ui.components.LinesMode
 import com.rizzi.bouquet.ResourceType
 import com.rizzi.bouquet.VerticalPdfReaderState
 import com.rizzi.bouquet.common.DrawingPath
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 internal class PdfViewerViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(
@@ -80,15 +86,45 @@ internal class PdfViewerViewModel : ViewModel() {
             y = point.y / pageHeight
         )
 
-        _uiState.update { uiState ->
-            if (isLeft) {
-                uiState.copy(
-                    currentPathPoints = uiState.currentPathPoints + relativePoint
-                )
-            } else {
-                uiState.copy(
-                    currentPathPoints2 = uiState.currentPathPoints2 + relativePoint
-                )
+        when (uiState.value.currentLinesMode) {
+            LinesMode.DRAW -> {
+                _uiState.update { uiState ->
+                    if (isLeft) {
+                        uiState.copy(
+                            currentPathPoints = uiState.currentPathPoints + relativePoint
+                        )
+                    } else {
+                        uiState.copy(
+                            currentPathPoints2 = uiState.currentPathPoints2 + relativePoint
+                        )
+                    }
+                }
+            }
+            LinesMode.LINES -> {
+                _uiState.update { uiState ->
+                    if (isLeft) {
+                        uiState.copy(
+                            currentPathPoints = listOf(uiState.currentPathPoints.first(), relativePoint)
+                        )
+                    } else {
+                        uiState.copy(
+                            currentPathPoints2 = listOf(uiState.currentPathPoints2.first(), relativePoint)
+                        )
+                    }
+                }
+            }
+            LinesMode.SNAPPED_LINES -> {
+                _uiState.update { uiState ->
+                    if (isLeft) {
+                        uiState.copy(
+                            currentPathPoints = listOf(uiState.currentPathPoints.first(), calculateSnappedOffset(uiState.currentPathPoints.first(), relativePoint))
+                        )
+                    } else {
+                        uiState.copy(
+                            currentPathPoints2 = listOf(uiState.currentPathPoints2.first(), calculateSnappedOffset(uiState.currentPathPoints2.first(), relativePoint))
+                        )
+                    }
+                }
             }
         }
     }
@@ -170,13 +206,15 @@ internal class PdfViewerViewModel : ViewModel() {
             if (uiState.currentDrawingType == DrawingType.PENCIL) {
                 uiState.copy(
                     widthPickerOpened = uiState.widthPickerOpened.not(),
-                    colorPickerOpened = uiState.colorPickerOpened.not()
+                    colorPickerOpened = uiState.colorPickerOpened.not(),
+                    linesModePickerOpened = uiState.linesModePickerOpened.not()
                 )
             } else {
                 uiState.copy(
                     currentDrawingType = DrawingType.PENCIL,
                     widthPickerOpened = true,
-                    colorPickerOpened = true
+                    colorPickerOpened = true,
+                    linesModePickerOpened = true
                 )
             }
         }
@@ -187,13 +225,15 @@ internal class PdfViewerViewModel : ViewModel() {
             if (uiState.currentDrawingType == DrawingType.HIGHLIGHTER) {
                 uiState.copy(
                     widthPickerOpened = uiState.widthPickerOpened.not(),
-                    colorPickerOpened = uiState.colorPickerOpened.not()
+                    colorPickerOpened = uiState.colorPickerOpened.not(),
+                    linesModePickerOpened = uiState.linesModePickerOpened.not()
                 )
             } else {
                 uiState.copy(
                     currentDrawingType = DrawingType.HIGHLIGHTER,
                     widthPickerOpened = true,
-                    colorPickerOpened = true
+                    colorPickerOpened = true,
+                    linesModePickerOpened = true
                 )
             }
         }
@@ -218,7 +258,8 @@ internal class PdfViewerViewModel : ViewModel() {
             uiState.copy(
                 isDrawingMode = false,
                 colorPickerOpened = false,
-                widthPickerOpened = false
+                widthPickerOpened = false,
+                linesModePickerOpened = false
             )
         }
     }
@@ -228,16 +269,47 @@ internal class PdfViewerViewModel : ViewModel() {
             if (uiState.currentDrawingType == DrawingType.ERASER) {
                 uiState.copy(
                     widthPickerOpened = uiState.widthPickerOpened.not(),
+                    linesModePickerOpened = uiState.linesModePickerOpened.not(),
                     colorPickerOpened = false
                 )
             } else {
                 uiState.copy(
                     currentDrawingType = DrawingType.ERASER,
                     widthPickerOpened = true,
+                    linesModePickerOpened = true,
                     colorPickerOpened = false
                 )
             }
         }
+    }
+
+    fun onSelectLinesMode(linesMode: LinesMode) {
+        _uiState.update { uiState ->
+            uiState.copy(
+                currentLinesMode = linesMode
+            )
+        }
+    }
+
+    private fun calculateSnappedOffset(start: Offset, current: Offset): Offset {
+        val dx = current.x - start.x
+        val dy = current.y - start.y
+
+        val radius = sqrt(dx * dx + dy * dy)
+        if (radius == 0f) return current
+
+        val angleInRadians = atan2(dy, dx)
+
+        var angleInDegrees = Math.toDegrees(angleInRadians.toDouble()).toFloat()
+        if (angleInDegrees < 0) angleInDegrees += 360f
+
+        val snappedDegrees = (angleInDegrees / 45f).roundToInt() * 45f
+        val snappedRadians = Math.toRadians(snappedDegrees.toDouble()).toFloat()
+
+        return Offset(
+            x = start.x + radius * cos(snappedRadians),
+            y = start.y + radius * sin(snappedRadians)
+        )
     }
 }
 
@@ -258,7 +330,9 @@ data class PdfViewerViewModelState(
     val currentColor: Color = Color.Black,
     val currentDrawingType: DrawingType = DrawingType.PENCIL,
     val colorPickerOpened: Boolean = false,
-    val widthPickerOpened: Boolean = false
+    val widthPickerOpened: Boolean = false,
+    val currentLinesMode: LinesMode = LinesMode.DRAW,
+    val linesModePickerOpened: Boolean = false
 ) {
     val colorWithAlpha = when (currentDrawingType) {
         DrawingType.PENCIL -> currentColor
